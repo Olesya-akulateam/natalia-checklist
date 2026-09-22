@@ -21,16 +21,31 @@
   .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:16px}
   .card h2{font-family:'Unbounded',sans-serif;font-weight:600;font-size:16px;margin:0 0 2px}
   .card .tier{color:var(--acc);font-weight:700;font-size:12px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.03em}
-  .row{display:grid;grid-template-columns:240px 92px 1fr;gap:14px;padding:11px 0;border-top:1px solid var(--line);align-items:start}
+  .row{display:grid;grid-template-columns:220px 84px 1fr 124px;gap:14px;padding:11px 0;border-top:1px solid var(--line);align-items:start}
   .row:first-of-type{border-top:0}
-  .card.bonus .row{grid-template-columns:240px 1fr}
+  .card.bonus .row{grid-template-columns:220px 1fr 124px}
   .fn{font-weight:600}
   .cm{color:var(--mut);font-size:13.5px}
   .b{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
   .ok{background:var(--okbg);color:var(--ok)} .org{background:var(--orgbg);color:var(--org)} .add{background:var(--addbg);color:var(--acc)}
   code{background:#f0eefb;color:var(--acc);padding:1px 6px;border-radius:5px;font-size:12.5px}
   .foot{color:var(--mut);text-align:center;font-size:12.5px;margin-top:24px}
-  @media(max-width:640px){.row{grid-template-columns:1fr;gap:4px}.row .b{justify-self:start}}
+  /* --- галочки проверки --- */
+  .checkleg{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:-8px 0 24px}
+  .rv{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;background:#fff;border:1px solid var(--line);border-radius:20px;padding:5px 12px}
+  .rv i{width:12px;height:12px;border-radius:4px;background:var(--c);display:inline-block}
+  .rv b{font-variant-numeric:tabular-nums;color:var(--mut);font-weight:700}
+  .rv-k{--c:#2563eb}.rv-u{--c:#0d9488}.rv-n{--c:#e0791b}
+  #resetChk{margin-left:auto;font:inherit;font-size:12.5px;font-weight:600;color:var(--mut);background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 13px;cursor:pointer}
+  #resetChk:hover{color:var(--ink);border-color:var(--mut)}
+  .chk{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-items:center}
+  .cb{position:relative;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;border:1.5px solid var(--line);cursor:pointer;font-size:12px;font-weight:800;color:var(--mut);user-select:none;transition:.12s;background:#fff}
+  .cb input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+  .cb span{pointer-events:none}
+  .cb-k{--c:#2563eb}.cb-u{--c:#0d9488}.cb-n{--c:#e0791b}
+  .cb:hover{border-color:var(--c)}
+  .cb:has(input:checked){background:var(--c);border-color:var(--c);color:#fff}
+  @media(max-width:640px){.row{grid-template-columns:1fr;gap:4px}.row .b{justify-self:start}.chk{justify-content:flex-start;margin-top:6px}}
 </style>
 </head>
 <body>
@@ -40,6 +55,12 @@
   <div class="legend">
     <span class="lg ok">✅ сделано</span>
     <span class="lg org">➖ организационное (не код)</span>
+  </div>
+  <div class="checkleg">
+    <span class="rv rv-k"><i></i>Ксения <b id="cnt-k">0/0</b></span>
+    <span class="rv rv-u"><i></i>Ульяна <b id="cnt-u">0/0</b></span>
+    <span class="rv rv-n"><i></i>Наталья <b id="cnt-n">0/0</b></span>
+    <button id="resetChk" type="button">Сбросить галочки</button>
   </div>
 
   <div class="part">Часть 1 — По тарифу «Премиум» (из коммерческого)
@@ -97,5 +118,39 @@
 
   <p class="foot">Resto Tigers · сверка «что сделано» · 22 сентября 2026</p>
 </div>
+<script>
+(function(){
+  var REV=[{k:'k',L:'К',n:'Ксения'},{k:'u',L:'У',n:'Ульяна'},{k:'n',L:'Н',n:'Наталья'}];
+  var rows=[].slice.call(document.querySelectorAll('.row')).filter(function(r){return r.querySelector('.fn');});
+  var total=rows.length;
+  rows.forEach(function(row){
+    var key=row.querySelector('.fn').textContent.trim();
+    var chk=document.createElement('div');chk.className='chk';
+    REV.forEach(function(r){
+      var id='chk::'+key+'::'+r.k;
+      var lab=document.createElement('label');lab.className='cb cb-'+r.k;lab.title='Проверка: '+r.n;
+      var inp=document.createElement('input');inp.type='checkbox';inp.dataset.rev=r.k;
+      inp.checked=localStorage.getItem(id)==='1';
+      inp.addEventListener('change',function(){localStorage.setItem(id,inp.checked?'1':'0');upd();});
+      var sp=document.createElement('span');sp.textContent=r.L;
+      lab.appendChild(inp);lab.appendChild(sp);chk.appendChild(lab);
+    });
+    row.appendChild(chk);
+  });
+  function upd(){
+    REV.forEach(function(r){
+      var n=document.querySelectorAll('input[data-rev="'+r.k+'"]:checked').length;
+      var el=document.getElementById('cnt-'+r.k);if(el)el.textContent=n+'/'+total;
+    });
+  }
+  document.getElementById('resetChk').addEventListener('click',function(){
+    if(!confirm('Снять все галочки?'))return;
+    Object.keys(localStorage).forEach(function(k){if(k.indexOf('chk::')===0)localStorage.removeItem(k);});
+    document.querySelectorAll('.chk input').forEach(function(i){i.checked=false;});
+    upd();
+  });
+  upd();
+})();
+</script>
 </body>
 </html>
